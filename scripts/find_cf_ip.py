@@ -16,7 +16,7 @@ def fetch_ip_ranges(url):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         }
     )
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    with urllib.request.urlopen(req, timeout=100) as resp:
         data = resp.read().decode()
     return [line.strip() for line in data.splitlines() if line.strip()]
 
