@@ -1,8 +1,8 @@
-name: Update Cloudflare Best IP
+name: Update Cloudflare Best IPs
 
 on:
   schedule:
-    - cron: "0 4 * * *"   # 每天 UTC 04:00（北京时间 12:00）
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,23 +10,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Download CloudflareST
+      run: |
+        wget https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.3.4/cfst_linux_amd64.tar.gz
+        tar -xzf cfst_linux_amd64.tar.gz
+        chmod +x CloudflareST
 
-      - name: Run Cloudflare IP script
-        run: |
-          mkdir -p data
-          python scripts/find_cf_ip.py
+    - name: Run Speed Test
+      run: |
+        mkdir -p data
+        ./CloudflareST \
+          -httping \
+          -dn 300 \
+          -sl 5 \
+          -tl 160 \
+          -url https://cf.xiu2.xyz \
+          -o data/result.csv
 
-      - name: Commit and push changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add data/cf_best_ip.txt
-          git diff --cached --quiet || git commit -m "Update Cloudflare best IP"
-          git push
+    - name: Generate region Top100 lists
+      run: |
+        tail -n +2 data/result.csv | awk -F, '$5=="HK"{print $1":"$2" "$3"ms"}' | head -n 100 > data/HK.txt
+        tail -n +2 data/result.csv | awk -F, '$5=="SG"{print $1":"$2" "$3"ms"}' | head -n 100 > data/SG.txt
+        tail -n +2 data/result.csv | awk -F, '$5=="JP"{print $1":"$2" "$3"ms"}' | head -n 100 > data/JP.txt
+        tail -n +2 data/result.csv | awk -F, '$5=="US"{print $1":"$2" "$3"ms"}' | head -n 100 > data/US.txt
+
+    - name: Commit changes
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add data/*
+        git commit -m "Daily update $(date +%F)" || echo "No changes"
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
