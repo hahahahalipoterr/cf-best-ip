@@ -10,8 +10,16 @@ SAMPLE_PER_NET = 3
 PORT = 443
 
 def fetch_ip_ranges(url):
-    data = urllib.request.urlopen(url, timeout=10).read().decode()
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        }
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = resp.read().decode()
     return [line.strip() for line in data.splitlines() if line.strip()]
+
 
 def tcp_ping(ip, port):
     start = time.time()
