@@ -62,7 +62,7 @@ def main():
     results.sort(key=lambda x: x[1])
 
     with open("data/cf_best_ip.txt", "w") as f:
-        for ip, latency, code in results[:20]:
+        for ip, latency, code in results[:100]:
             f.write(f"{code} | {ip}:{PORT} | {latency}ms\n")
 
     print("Done.")
