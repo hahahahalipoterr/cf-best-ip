@@ -1,5 +1,32 @@
-- name: Run script
-  run: |
-    mkdir -p data
-    python scripts/find_cf_ip.py
+name: Update Cloudflare Best IP
 
+on:
+  schedule:
+    - cron: "0 4 * * *"   # 每天 UTC 04:00（北京时间 12:00）
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Cloudflare IP script
+        run: |
+          mkdir -p data
+          python scripts/find_cf_ip.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/cf_best_ip.txt
+          git diff --cached --quiet || git commit -m "Update Cloudflare best IP"
+          git push
