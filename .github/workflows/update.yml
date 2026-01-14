@@ -1,1 +1,5 @@
-name: test
+- name: Run script
+  run: |
+    mkdir -p data
+    python scripts/find_cf_ip.py
+
